@@ -69,52 +69,6 @@ interface Color {
   a: number;
 }
 
-function placeholderTokens(
-  placeholderText: string,
-  language?: string
-): Message {
-  const tokens: Token[] = [];
-  let x = 0;
-  let y = 0;
-  let width = 0;
-  for (let i = 0; i < placeholderText.length; i++) {
-    const text = placeholderText.charAt(i);
-
-    tokens.push({
-      i,
-      x,
-      y,
-      text,
-      style: {
-        color: PLACEHOLDER,
-        weight: "normal",
-      },
-    });
-
-    if (text === "\n") {
-      x = 0;
-      y++;
-    } else {
-      x++;
-      if (x > width) {
-        width = x;
-      }
-    }
-  }
-
-  const height = y + 1;
-  return {
-    type: "text",
-    width,
-    height,
-    text: placeholderText,
-    tokens,
-    dbml: JSON.stringify(SAMPLE_TABLE),
-    dbmlError: null,
-    language: language == null ? "JavaScript" : language,
-  };
-}
-
 // create promise function to trigger showUI
 function showUI(text = "") {
   const injectedHtml = __html__
@@ -185,7 +139,6 @@ function Widget() {
         if (msg.dbml === dbmlState) return;
 
         if (msg.text === "") {
-          // setTokens(placeholderTokens(PLACEHOLDER_TEXT, msg.language));
           setTable(SAMPLE_TABLE);
         } else {
           const currentNode = figma.getNodeById(widgetId) as WidgetNode;
@@ -197,7 +150,6 @@ function Widget() {
           currentNode.setSharedPluginData('dbmlTable', 'tableDef', msg.text)
           // informAllSiblings(figma.widgetId, siblings);
           setDbmlState(msg.dbml);
-          // setTokens(msg);
         }
       }
     };
