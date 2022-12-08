@@ -1,0 +1,31 @@
+Project MyWork{
+  database_type: "PostgresQL"
+  note: "Hi Nireak"
+}
+
+Enum user_status {
+  draft [note: 'Hi']
+  verify
+  block
+}
+
+Table core.employee {
+  id integer
+  age integer
+}
+
+Table core.users {
+  id integer
+  status user_status
+}
+
+Table core.invites {
+  id integer
+  inviter_id uuid [default: "1j2"]
+  invitee_id uuid
+  note: 'invites notes'
+}
+
+Ref user_invite_other_user:core.users.id < core.invites.inviter_id
+Ref:core.users.id - core.invites.invitee_id
+
