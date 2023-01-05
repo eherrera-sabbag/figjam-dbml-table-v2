@@ -7,7 +7,6 @@ const {
   Frame,
   AutoLayout,
   useSyncedState,
-  useSyncedMap,
   usePropertyMenu,
   useWidgetId,
 } = widget;
@@ -85,20 +84,18 @@ function Widget() {
   const widgetId = useWidgetId();
   const [color, setColor] = useSyncedState("theme", startColor);
 
+  const [showNote, setShowNote] = useSyncedState("showNote", true);
   // const [siblings, setSiblings] = useSyncedState("siblings", {});
   const [tableDef, setTableDef] = useSyncedState("tableDef", PLACEHOLDER_TEXT);
   const [table, setTable] = useSyncedState("table", SAMPLE_TABLE);
   const [dbmlState, setDbmlState] = useSyncedState("dbml", {});
-
   const [FONT_SIZE, setFontSize] = useSyncedState("fontSize", 24);
   const [colorMode, setColorMode] = useSyncedState("colorMode", "light");
-  const [includeFrame, setIncludeFrame] = useSyncedState("includeFrame", false);
   // const LETTER_WIDTH = FONT_SIZE * 0.6;
   // const LETTER_HEIGHT = (FONT_SIZE / 24) * 30;
   const PADDING = (FONT_SIZE / 24) * 10;
-  const CORNER_RADIUS = (FONT_SIZE / 24) * 8;
-  const BACKGROUND = colorMode === "light" ? "#FFFFFF" : "#343434";
 
+  // const toggleShowNoteButt = (showNote ? "Hide note" : "Show note");
   usePropertyMenu(
     [
       {
@@ -113,12 +110,20 @@ function Widget() {
         tooltip: "Edit",
         propertyName: "edit",
       },
+      {
+        itemType: "action",
+        tooltip: "Toggle Note",
+        propertyName: "toggleShowNote",
+      },
     ],
     ({ propertyName, propertyValue }) => {
       if (propertyName === "edit") {
         return new Promise((resolve) => {
           showUI(tableDef);
         });
+      }
+      if (propertyName === "toggleShowNote") {
+        setShowNote(!showNote);
       }
 
       if (propertyName === "color") {
@@ -147,8 +152,8 @@ function Widget() {
           setTable(dbmlTable);
           setTableDef(msg.text);
 
-          currentNode.setSharedPluginData('dbmlTable', 'tableDef', msg.text)
-          // informAllSiblings(figma.widgetId, siblings);
+          currentNode.setSharedPluginData("dbmlTable", "tableDef", msg.text);
+
           setDbmlState(msg.dbml);
         }
       }
@@ -161,57 +166,167 @@ function Widget() {
         schema={{ name: table.schemaName || "public" }}
         table={table}
         tableSpec={{ color: color, fontSize: FONT_SIZE, padding: PADDING }}
+        showNote={showNote}
       />
     </AutoLayout>
   );
-    return component;
-
+  return component;
 }
 
 function Table(props: {
   schema: SchemaResponse;
   table: any;
   tableSpec: { fontSize: number; color: string; padding: any };
+  showNote: boolean;
 }) {
   const {
     schema: { name: schemaName },
     table: { name, fields, note },
     tableSpec: { fontSize, color, padding },
+    showNote,
   } = props;
   const displayTableName =
     schemaName === "public" ? name : [schemaName, name].join(".");
   const COLUMN_FONT_SIZE = fontSize * 0.8;
+
   return (
     <AutoLayout direction="vertical" padding={padding}>
       <AutoLayout
         width={500}
-        height={48}
+        // height={48}
+        direction="vertical"
         cornerRadius={{
           topLeft: 16,
           topRight: 16,
         }}
         fill={color}
-        padding={{ horizontal: 16 }}
+        padding={{ horizontal: 16, vertical: 6 }}
         horizontalAlignItems="center"
         verticalAlignItems="center"
+        tooltip={note}
       >
-        <Text
-          width="fill-parent"
-          fontWeight={500}
-          horizontalAlignText="center"
-          verticalAlignText="center"
-          fontFamily={FONT_FAMILY}
-          fontSize={fontSize}
-        >
-          {displayTableName}
-        </Text>
-        {note && (
-          <AutoLayout tooltip={note}>
+        <AutoLayout width="fill-parent">
+          <Text
+            width="fill-parent"
+            fontWeight={500}
+            horizontalAlignText="center"
+            verticalAlignText="center"
+            fontFamily={FONT_FAMILY}
+            fontSize={fontSize}
+          >
+            {displayTableName}
+          </Text>
+          {note && (
+            <AutoLayout padding={{ vertical: 6 }}>
+              <Text
+                fontSize={fontSize}
+                fontFamily="Font Awesome 6 Free"
+                fontWeight={900}
+                fill={"#000000"}
+                verticalAlignText="center"
+              >
+                {"note-sticky"}
+              </Text>
+            </AutoLayout>
+          )}
+        </AutoLayout>
+        {showNote && note && <Text fill={"#777777"}> {note} </Text>}
+      </AutoLayout>
+      {fields.map((field, key) => (
+        <Column
+          key={field.name + key}
+          fontSize={COLUMN_FONT_SIZE}
+          column={field}
+          showNote={showNote}
+        />
+      ))}
+    </AutoLayout>
+  );
+}
+
+function Column(props: {
+  fontSize: number;
+  column: FieldResponse;
+  showNote: boolean;
+}) {
+  const {
+    column: { name, type, pk, note, not_null, unique, fieldDefault },
+    fontSize,
+    showNote,
+  } = props;
+
+  const displayNote = note ? note : "";
+  const displayDefaultValue =
+    fieldDefault && fieldDefault.value ? "Default: " + fieldDefault.value : "";
+  const colTooltip = [displayNote, displayDefaultValue]
+    .filter(Boolean)
+    .join("\n");
+
+  const leftIcon = pk ? "key" : unique ? "asterisk" : "";
+  const leftIconColor = pk ? "#FFE800" : unique ? "#3498db" : "";
+  const leftIconToolTip = pk ? "Primary Key" : unique ? "Unique" : "";
+
+  const DEFAULT_COL_HEIGHT = 48;
+  const hasNote = note || fieldDefault;
+  // const colHeight =
+  //   showNote && hasNote ? DEFAULT_COL_HEIGHT * 2 : DEFAULT_COL_HEIGHT;
+  return (
+    <AutoLayout
+      width={500}
+      // height={colHeight}
+      direction="vertical"
+      padding={{
+        right: 16,
+        left: 18,
+        top: 10,
+        bottom: 10,
+      }}
+      stroke="#e6e6e6"
+      fill={"#ffffff"}
+      tooltip={colTooltip}
+    >
+      <AutoLayout
+        width="fill-parent"
+        verticalAlignItems="center"
+        horizontalAlignItems="center"
+      >
+        {!!leftIcon ? (
+          <AutoLayout
+            padding={{
+              right: 5,
+              horizontal: 6,
+            }}
+          >
             <Text
               fontSize={fontSize}
               fontFamily="Font Awesome 6 Free"
               fontWeight={900}
-              fill={"#000000"}
+              fill={leftIconColor}
+              verticalAlignText="center"
+              tooltip={leftIconToolTip}
+            >
+              {leftIcon}
+            </Text>
+          </AutoLayout>
+        ) : null}
+        <Text width="fill-parent" fontFamily="Roboto Mono" fontSize={fontSize}>
+          {name + (not_null === undefined ? "" : not_null ? "" : "?")}
+        </Text>
+
+        <Text fontFamily="Roboto Mono" fontSize={fontSize} fill={"#777777"}>
+          {type}
+        </Text>
+        {(note || fieldDefault) && (
+          <AutoLayout
+            padding={{
+              left: 5,
+            }}
+          >
+            <Text
+              fontSize={fontSize}
+              fontFamily="Font Awesome 6 Free"
+              fontWeight={900}
+              fill={"#777777"}
               verticalAlignText="center"
             >
               {"note-sticky"}
@@ -219,87 +334,9 @@ function Table(props: {
           </AutoLayout>
         )}
       </AutoLayout>
-      {fields.map((field, key) => (
-        <Column
-          key={field.name + key}
-          fontSize={COLUMN_FONT_SIZE}
-          column={field}
-        />
-      ))}
-    </AutoLayout>
-  );
-}
-
-function Column(props: { fontSize: number; column: FieldResponse }) {
-  const {
-    column: { name, type, pk, note, not_null, unique, fieldDefault },
-    fontSize,
-  } = props;
-
-  const displayNote = note ? "Note: " + note : "";
-  const displayDefaultValue =
-    fieldDefault && fieldDefault.value ? "Default: " + fieldDefault.value : "";
-  const colTooltip = [displayNote, displayDefaultValue]
-    .filter(Boolean)
-    .join("\n");
-
-  const icon = pk ? "key" : unique ? "asterisk" : "";
-  const iconColor = pk ? "#FFE800" : unique ? "#3498db" : "";
-  const iconToolTip = pk ? "Primary Key" : unique ? "Unique" : "";
-  return (
-    <AutoLayout
-      width={500}
-      height={48}
-      padding={{
-        right: 16,
-        left: 18,
-      }}
-      stroke="#e6e6e6"
-      fill={"#ffffff"}
-      verticalAlignItems="center"
-      horizontalAlignItems="center"
-    >
-      {!!icon ? (
-        <AutoLayout
-          padding={{
-            right: 5,
-          }}
-          tooltip={iconToolTip}
-        >
-          <Text
-            fontSize={fontSize}
-            fontFamily="Font Awesome 6 Free"
-            fontWeight={900}
-            fill={iconColor}
-            verticalAlignText="center"
-          >
-            {icon}
-          </Text>
-        </AutoLayout>
-      ) : null}
-      <Text width="fill-parent" fontFamily="Roboto Mono" fontSize={fontSize}>
-        {name + (not_null === undefined ? "" : not_null ? "" : "?")}
-      </Text>
-
-      <Text fontFamily="Roboto Mono" fontSize={fontSize}>
-        {type}
-      </Text>
-      {(note || fieldDefault) && (
-        <AutoLayout
-          padding={{
-            left: 5,
-          }}
-          tooltip={colTooltip}
-        >
-          <Text
-            fontSize={fontSize}
-            fontFamily="Font Awesome 6 Free"
-            fontWeight={900}
-            fill={"#000000"}
-            verticalAlignText="center"
-          >
-            {"note-sticky"}
-          </Text>
+      {showNote && hasNote && (
+        <AutoLayout padding={{ left: 5 }}>
+          <Text fill={"#777777"}> {colTooltip} </Text>
         </AutoLayout>
       )}
     </AutoLayout>

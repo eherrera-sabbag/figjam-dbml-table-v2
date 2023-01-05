@@ -32,6 +32,10 @@ const DEFAULT_STYLE: Style = {
   weight: "",
 };
 
+const p = document.createElement("p");
+p.innerHTML = "Press ESC to exist code editor";
+document.body.appendChild(p);
+
 /**
  * Gets the CodeMirror editor extension configuration for the given languages
  * @param language The CodeMirror language package
