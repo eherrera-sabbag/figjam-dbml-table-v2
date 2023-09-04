@@ -11,9 +11,14 @@
     "build": "concurrently \"npm:build:iframe\" \"npm:build:widget\"",
     "watch": "concurrently \"npm:watch:iframe\" \"npm:watch:widget\""
   },
-  "author": "KS Nireak",
+  "author": "ks-nireak",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^7.2.2"
+  },
+  "networkAccess": {
+    "allowedDomains": [
+      "https://www.gravatar.com/"
+    ]
   }
 }
