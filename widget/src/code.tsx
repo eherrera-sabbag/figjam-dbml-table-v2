@@ -14,30 +14,7 @@ const {
   useWidgetId,
 } = widget;
 
-const defaultHeaderColors = [
-  { option: "#F24822", tooltip: "Red" },
-  { option: "#FFA629", tooltip: "Orange" },
-  { option: "#FFCD29", tooltip: "Yellow" },
-  { option: "#14AE5C", tooltip: "Green" },
-  { option: "#0D99FF", tooltip: "Blue" },
-  { option: "#9747FF", tooltip: "Violet" },
-  { option: "#FFC7C2", tooltip: "Light red" },
-  { option: "#FCD19C", tooltip: "Light orange" },
-  { option: "#FFE8A3", tooltip: "Light yellow" },
-  { option: "#AFF4C6", tooltip: "Light green" },
-  { option: "#BDE3FF", tooltip: "Light blue" },
-  { option: "#E4CCFF", tooltip: "Light violet" },
-  { option: "#FFF8E7", tooltip: "Cosmic Latte" },
-];
-
-const PLACEHOLDER = "rgb(128, 128, 128)";
-const FONT_FAMILY = "Source Code Pro";
-const PLACEHOLDER_TEXT = `Table table_name{
-  id int [pk]
-  created_at timestamp
-  updated_at timestamp
-}
-`;
+const WIDGET_NAME = "DBML";
 const SAMPLE_TABLE = {
   name: "table_name",
   note: "This is a sample table",
@@ -59,6 +36,16 @@ const SAMPLE_TABLE = {
     },
   ],
 };
+
+const PLACEHOLDER_TEXT = `Table table_name{
+  id int [pk]
+  created_at timestamp
+  updated_at timestamp
+}
+`;
+
+const FONT_FAMILY = "Source Code Pro";
+
 const DEFAULT_HEADER_COLOR = [
   // { option: "#F24822", tooltip: "Red" },
   // { option: "#14AE5C", tooltip: "Green" },
@@ -76,6 +63,8 @@ const DEFAULT_HEADER_COLOR = [
   { option: "#78e08f", tooltip: "Aurora" },
   { option: "#b8e994", tooltip: "Paradise" },
 ];
+
+const PLACEHOLDER = "rgb(128, 128, 128)";
 
 const startColor: HexCode =
   defaultHeaderColors[Math.floor(Math.random() * defaultHeaderColors.length)]
