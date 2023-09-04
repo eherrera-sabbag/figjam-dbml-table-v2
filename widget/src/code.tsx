@@ -59,6 +59,23 @@ const SAMPLE_TABLE = {
     },
   ],
 };
+const DEFAULT_HEADER_COLOR = [
+  // { option: "#F24822", tooltip: "Red" },
+  // { option: "#14AE5C", tooltip: "Green" },
+  // { option: "#0D99FF", tooltip: "Blue" },
+  // { option: "#9747FF", tooltip: "Violet" },
+  { option: "#FFA629", tooltip: "Orange" },
+  { option: "#FFCD29", tooltip: "Yellow" },
+  { option: "#FFC7C2", tooltip: "Light red" },
+  { option: "#FCD19C", tooltip: "Light orange" },
+  { option: "#FFE8A3", tooltip: "Light yellow" },
+  { option: "#AFF4C6", tooltip: "Light green" },
+  { option: "#BDE3FF", tooltip: "Light blue" },
+  { option: "#E4CCFF", tooltip: "Light violet" },
+  { option: "#FFF8E7", tooltip: "Cosmic Latte" },
+  { option: "#78e08f", tooltip: "Aurora" },
+  { option: "#b8e994", tooltip: "Paradise" },
+];
 
 const startColor: HexCode =
   defaultHeaderColors[Math.floor(Math.random() * defaultHeaderColors.length)]
