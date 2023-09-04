@@ -108,21 +108,33 @@ function Widget() {
   usePropertyMenu(
     [
       {
+        itemType: "action",
+        tooltip: "Add",
+        propertyName: "add",
+      },
+      {
+        itemType: "action",
+        tooltip: "Connect",
+        propertyName: "connect",
+      },
+      { itemType: "separator" },
+      {
         itemType: "color-selector",
         propertyName: "color",
         tooltip: "Color selector",
         selectedOption: color,
-        options: defaultHeaderColors,
-      },
-      {
-        itemType: "action",
-        tooltip: "Edit",
-        propertyName: "edit",
+        options: DEFAULT_HEADER_COLOR,
       },
       {
         itemType: "action",
         tooltip: "Toggle Note",
         propertyName: "toggleShowNote",
+      },
+      { itemType: "separator" },
+      {
+        itemType: "action",
+        tooltip: "Edit",
+        propertyName: "edit",
       },
     ],
     ({ propertyName, propertyValue }) => {
