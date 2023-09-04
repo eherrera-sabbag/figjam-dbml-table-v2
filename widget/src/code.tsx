@@ -362,7 +362,10 @@ function Column(props: {
       </AutoLayout>
       {showNote && hasNote && (
         <AutoLayout padding={{ left: 5 }}>
-          <Text fill={"#777777"}> {colTooltip} </Text>
+          <Text fill={"#777777"} fontFamily="Roboto Mono">
+            {" "}
+            {colTooltip}{" "}
+          </Text>
         </AutoLayout>
       )}
     </AutoLayout>
