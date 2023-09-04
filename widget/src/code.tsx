@@ -1,6 +1,9 @@
 /// <reference path="../../declaration/types.d.ts" />
 // This widget will open an Iframe window with buttons to show a toast message and close the window.
 const { widget } = figma;
+
+// const Helper = require("../utils");
+import Helper from "../utils";
 const {
   useEffect,
   Text,

@@ -5,6 +5,8 @@ import { basicSetup } from "codemirror";
 import { indentWithTab } from "@codemirror/commands";
 import { Parser } from "@dbml/core";
 
+import Helper from "../../widget/utils";
+
 import { LanguageSupport } from "@codemirror/language";
 import { javascript } from "@codemirror/lang-javascript";
 
@@ -93,7 +95,7 @@ function getExtensions(language: LanguageSupport, languageName: string) {
         try {
           const parseDbml = Parser.parse(docContents, "dbml");
 
-          dbmlJSON = convertToJson(parseDbml);
+          dbmlJSON = Helper.convertToJson(parseDbml);
         } catch (err) {
           dbmlError = err.message;
         }
@@ -117,7 +119,7 @@ function getExtensions(language: LanguageSupport, languageName: string) {
         let dbmlError: string | null = null;
 
         try {
-          const parseDbml = Parser.parse(docContents, "dbml");
+          dbmlJSON = Helper.convertToJson(parseDbml);
 
           dbmlJSON = convertToJson(parseDbml);
         } catch (err) {
