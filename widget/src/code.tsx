@@ -251,7 +251,12 @@ function Table(props: {
             </AutoLayout>
           )}
         </AutoLayout>
-        {showNote && note && <Text fill={"#777777"}> {note} </Text>}
+        {showNote && note && (
+          <Text fill={"#777777"} fontFamily="Roboto Mono">
+            {" "}
+            {note}{" "}
+          </Text>
+        )}
       </AutoLayout>
       {fields.map((field, key) => (
         <Column
