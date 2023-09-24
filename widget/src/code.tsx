@@ -47,10 +47,6 @@ const PLACEHOLDER_TEXT = `Table table_name{
 const FONT_FAMILY = "Source Code Pro";
 
 const DEFAULT_HEADER_COLOR = [
-  // { option: "#F24822", tooltip: "Red" },
-  // { option: "#14AE5C", tooltip: "Green" },
-  // { option: "#0D99FF", tooltip: "Blue" },
-  // { option: "#9747FF", tooltip: "Violet" },
   { option: "#FFA629", tooltip: "Orange" },
   { option: "#FFCD29", tooltip: "Yellow" },
   { option: "#FFC7C2", tooltip: "Light red" },
