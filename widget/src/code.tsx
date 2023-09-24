@@ -133,17 +133,90 @@ function Widget() {
       },
     ],
     ({ propertyName, propertyValue }) => {
-      if (propertyName === "edit") {
-        return new Promise((resolve) => {
-          showUI(tableDef);
-        });
-      }
-      if (propertyName === "toggleShowNote") {
-        setShowNote(!showNote);
-      }
+      switch (propertyName) {
+        case "color":
+          setColor(propertyValue);
+          break;
+        case "toggleShowNote":
+          setShowNote(!showNote);
+          break;
+        case "edit": {
+          const currentNode = figma.getNodeById(widgetId) as WidgetNode;
 
-      if (propertyName === "color") {
-        setColor(propertyValue);
+          const siblings = currentNode.getSharedPluginData(
+            "dbmlTable",
+            "siblings"
+          );
+
+          const sibTables = getTableDataBySiblings(siblings, currentNode.id);
+        return new Promise((resolve) => {
+            showUI(tableDef, "", sibTables);
+        });
+        }
+
+        case "add": {
+          const currentNode = figma.getNodeById(widgetId) as WidgetNode;
+          const parentId =
+            currentNode.getSharedPluginData("dbmlTable", "parentId") ||
+            currentNode.id;
+
+          if (!currentNode.getSharedPluginData("dbmlTable", "parentId")) {
+            currentNode.setSharedPluginData(
+              "dbmlTable",
+              "parentId",
+              currentNode.id
+            );
+          }
+          const oldTableName = currentNode.widgetSyncedState.table.name;
+
+          const clonedNode = currentNode.clone();
+
+          let tableDef = clonedNode.widgetSyncedState.tableDef;
+          let tableObj = clonedNode.widgetSyncedState.table;
+
+          const reg = tableDef.match(/Table?\s(.*?){/);
+
+          if (reg.length > 1) {
+            let tableName = reg[1].includes(".")
+              ? reg[1].split(".")[1]
+              : reg[1];
+
+            // trim white space from tableName with regex
+            tableName = tableName.replace(/\s/g, "");
+
+            const newTableName = tableName + "_copy";
+
+            tableObj.name = newTableName;
+            tableDef = tableDef.replace(tableName, newTableName);
+          }
+
+          const dbmlJson = JSON.parse(currentNode.widgetSyncedState.dbml)
+          dbmlJson[0].tables.push(tableObj)
+          dbmlJson[0].refs.map(ref => {
+
+            ref.refDef = ref.refDef.replace(`|${oldTableName}|`, `|${tableObj.name}|`);
+
+            if(ref.from.table === oldTableName) ref.from.table = tableObj.name
+            if(ref.to.table === oldTableName) ref.to.table = tableObj.name
+
+            return ref
+          })
+
+
+          clonedNode.setWidgetSyncedState({
+            tableDef: tableDef,
+            table: tableObj,
+            dbml: JSON.stringify(dbmlJson),
+          });
+          clonedNode.setSharedPluginData("dbmlTable", "parentId", parentId);
+
+          informAllSiblings(currentNode, clonedNode.id, parentId);
+          setTimeout(() => {
+            positionCloneAndConnector(currentNode, clonedNode);
+          }, 1); // wait for cloned node to be appended to page
+
+          break;
+        }
       }
     }
   );
