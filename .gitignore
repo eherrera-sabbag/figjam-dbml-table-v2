@@ -9,3 +9,7 @@ code.js
 bundle.js
 html.js
 ui.html
+
+# remove DS_Store from everywhere
+**/.DS_Store
+

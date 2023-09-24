@@ -1,7 +1,7 @@
 {
   "scripts": {
-    "build": "tsc -p tsconfig.json --outDir ..",
-    "watch": "tsc -p tsconfig.json --outDir .. -w"
+    "build": "tsc -p tsconfig.json --outDir ../",
+    "watch": "tsc -p tsconfig.json --outDir ../ -w"
   },
   "devDependencies": {
     "@figma/plugin-typings": "*",
