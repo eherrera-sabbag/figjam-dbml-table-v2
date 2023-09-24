@@ -2,10 +2,9 @@
   "name": "DBML",
   "id": "1179003620483944685",
   "api": "1.0.0",
-  "main": "code.js",
-  "editorType": ["figma", "figjam"],
+  "main": "src/code.js",
+  "editorType": ["figjam"],
   "containsWidget": true,
   "widgetApi": "1.0.0",
   "ui": "ui.html"
 }
-
