@@ -1,14 +1,14 @@
 /// <reference path="../../declaration/types.d.ts" />
-// This widget will open an Iframe window with buttons to show a toast message and close the window.
+
 const { widget } = figma;
 
-// const Helper = require("../utils");
-import Helper from "../utils";
+// import Helper from "../utils";
+
+// import Table from "./table";
 const {
   useEffect,
-  Text,
-  Frame,
   AutoLayout,
+  Text,
   useSyncedState,
   usePropertyMenu,
   useWidgetId,
@@ -36,7 +36,6 @@ const SAMPLE_TABLE = {
     },
   ],
 };
-
 const PLACEHOLDER_TEXT = `Table table_name{
   id int [pk]
   created_at timestamp
@@ -63,7 +62,7 @@ const DEFAULT_HEADER_COLOR = [
 const PLACEHOLDER = "rgb(128, 128, 128)";
 
 const startColor: HexCode =
-  defaultHeaderColors[Math.floor(Math.random() * defaultHeaderColors.length)]
+  DEFAULT_HEADER_COLOR[Math.floor(Math.random() * DEFAULT_HEADER_COLOR.length)]
     .option;
 
 interface Color {
@@ -74,15 +73,17 @@ interface Color {
 }
 
 // create promise function to trigger showUI
-function showUI(text = "") {
+function showUI(text = "", ref = "", sibTables) {
   const injectedHtml = __html__
     .replace(/['"]\$\$\$INITIAL_DOC\$\$\$['"]/, JSON.stringify(text))
-    .replace(
-      /['"]\$\$\$INITIAL_LANGUAGE\$\$\$['"]/,
-      JSON.stringify("JavaScript")
-    );
+    .replace(/['"]\$\$\$INITIAL_REF_DOC\$\$\$['"]/, JSON.stringify(ref))
+    .replace(/['"]\$\$\$TABLE_LIST\$\$\$['"]/, JSON.stringify(sibTables));
+  // .replace(
+  //   /['"]\$\$\$INITIAL_LANGUAGE\$\$\$['"]/,
+  //   JSON.stringify("JavaScript")
+  // );
 
-  figma.showUI(injectedHtml, { width: 500, height: 300 });
+  figma.showUI(injectedHtml, { width: 1000, height: 600 });
 }
 
 function Widget() {
@@ -149,9 +150,9 @@ function Widget() {
           );
 
           const sibTables = getTableDataBySiblings(siblings, currentNode.id);
-        return new Promise((resolve) => {
+          return new Promise((resolve) => {
             showUI(tableDef, "", sibTables);
-        });
+          });
         }
 
         case "add": {
@@ -217,6 +218,20 @@ function Widget() {
 
           break;
         }
+        case "connect": {
+          const currentNode = figma.getNodeById(widgetId) as WidgetNode;
+
+          const siblings = currentNode.getSharedPluginData(
+            "dbmlTable",
+            "siblings"
+          );
+          const ref = extractRef(dbml);
+
+          if (ref.length > 0) {
+            renderRef(ref, siblings);
+          }
+          break;
+        }
       }
     }
   );
@@ -230,20 +245,22 @@ function Widget() {
           return figma.notify(msg.dbmlError, { timeout: 5000 });
         }
 
-        if (msg.dbml === dbmlState) return;
-
         if (msg.text === "") {
           setTable(SAMPLE_TABLE);
         } else {
           const currentNode = figma.getNodeById(widgetId) as WidgetNode;
-          const dbmlTable = extractTables(msg.dbml)[0];
+          const dbmlTable = extractTables(msg.dbml);
 
-          setTable(dbmlTable);
+          currentNode.setSharedPluginData(
+            "dbmlTable",
+            "table",
+            JSON.stringify(dbmlTable[0])
+          );
+
+          // currentNode.setSharedPluginData('dbmlTable', 'ref', JSON.stringify(dbmlRef))
+          setTable(dbmlTable[0]);
           setTableDef(msg.text);
-
-          currentNode.setSharedPluginData("dbmlTable", "tableDef", msg.text);
-
-          setDbmlState(msg.dbml);
+          setDbml(msg.dbml);
         }
       }
     };
