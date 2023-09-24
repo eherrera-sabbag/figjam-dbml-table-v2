@@ -90,12 +90,11 @@ function Widget() {
   const [color, setColor] = useSyncedState("theme", startColor);
 
   const [showNote, setShowNote] = useSyncedState("showNote", true);
-  // const [siblings, setSiblings] = useSyncedState("siblings", {});
-  const [tableDef, setTableDef] = useSyncedState("tableDef", PLACEHOLDER_TEXT);
-  const [table, setTable] = useSyncedState("table", SAMPLE_TABLE);
-  const [dbmlState, setDbmlState] = useSyncedState("dbml", {});
+  const [tableDef, setTableDef] = useSyncedState("tableDef", PLACEHOLDER_TEXT); // use for store string display on edit
+  const [dbml, setDbml] = useSyncedState("dbml", "");
+  const [table, setTable] = useSyncedState("table", SAMPLE_TABLE); // use to hold table object
   const [FONT_SIZE, setFontSize] = useSyncedState("fontSize", 24);
-  const [colorMode, setColorMode] = useSyncedState("colorMode", "light");
+  // const [colorMode, setColorMode] = useSyncedState("colorMode", "light");
   // const LETTER_WIDTH = FONT_SIZE * 0.6;
   // const LETTER_HEIGHT = (FONT_SIZE / 24) * 30;
   const PADDING = (FONT_SIZE / 24) * 10;
@@ -188,6 +187,149 @@ function Widget() {
     </AutoLayout>
   );
   return component;
+}
+
+function renderRef(refJson, siblings) {
+  const foundSibNodes = figma.currentPage.findAll(
+    (n) => siblings.includes(n.id) && n.type === "WIDGET"
+  );
+  refJson.forEach((ref) => {
+    const sourceTable = ref.from;
+    const targetTable = ref.to;
+
+    let sourceTableNode, targetTableNode = undefined;
+    foundSibNodes.forEach((n: WidgetNode) => {
+      const nTable = n.widgetSyncedState["table"];
+      if (nTable.name === sourceTable.table && nTable.schemaName === sourceTable.schema) {
+        sourceTableNode = n;
+      }
+      if (nTable.name === targetTable.table && nTable.schemaName === targetTable.schema) {
+        targetTableNode = n;
+      }
+    })
+
+    if (sourceTableNode == undefined || targetTableNode == undefined) return;
+    const sourceTableId = sourceTableNode.id;
+    const targetTableId = targetTableNode.id;
+
+    // find connector with same source and target if exists dont draw
+
+
+    const existingConnector = figma.currentPage.findOne(
+      (n) =>
+        n.type === "CONNECTOR" && n.getPluginData("dbmlTableRef") === ref.refDef
+    );
+
+    if (existingConnector) {
+      return;
+    }
+
+    const connector = figma.createConnector();
+    connector.connectorStart = {
+      endpointNodeId: sourceTableId,
+      magnet: "RIGHT",
+    };
+    connector.connectorEnd = {
+      endpointNodeId: targetTableId,
+      magnet: "LEFT",
+    };
+
+    connector.connectorStartStrokeCap =
+      sourceTable.relation == "1" ? "NONE" : "ARROW_LINES";
+
+    connector.connectorEndStrokeCap =
+      targetTable.relation == "1" ? "NONE" : "ARROW_LINES";
+
+    connector.setPluginData("dbmlTableRef", ref.refDef);
+  });
+}
+
+function informAllSiblings(currentNode, cloneNodeId, parentId) {
+  // inform current sibling nodes of new sibling id
+  const { id: uniqueNodeId, widgetId: widgetTypeId } = currentNode;
+
+  let uniqueSiblingIds = [];
+  figma.currentPage.findWidgetNodesByWidgetId(widgetTypeId).forEach((n) => {
+    if (n == undefined) return; // if node is deleted
+    const nParentId = n.getSharedPluginData("dbmlTable", "parentId");
+    if (nParentId !== parentId) return; // if node is not sibling
+    let ids = n.getSharedPluginData("dbmlTable", "siblings") || "";
+    const siblings = ids ? JSON.parse(ids) : [];
+    uniqueSiblingIds = [...new Set([...siblings, uniqueNodeId, cloneNodeId])];
+
+    n.setSharedPluginData(
+      "dbmlTable",
+      "siblings",
+      JSON.stringify(uniqueSiblingIds)
+    );
+  });
+
+  return uniqueSiblingIds;
+}
+
+function getTableDataBySiblings(siblings, selfId) {
+  if (!siblings) {
+    return [];
+  }
+  const sibIds = JSON.parse(siblings);
+  const filteredSibIds = sibIds.filter((sibId) => sibId !== selfId);
+
+  const tableData = filteredSibIds
+    .map((siblingId) => {
+      const siblingNode = figma.getNodeById(siblingId) as WidgetNode;
+      if (!siblingNode) return; // if node is deleted
+      const sib = siblingNode.widgetSyncedState["table"];
+      const sibWithId = { ...sib, uniqueNodeId: siblingId };
+      return sibWithId;
+    })
+    .filter(Boolean);
+  return tableData;
+}
+
+function extractTables(dbml: string) {
+  const schemas = JSON.parse(dbml);
+  const tables = [];
+
+  for (let index = 0; index < schemas.length; index++) {
+    const schema = schemas[index];
+    for (let index = 0; index < schema.tables.length; index++) {
+      const table = schema.tables[index];
+      tables.push({ ...table, schemaName: schema.name });
+    }
+  }
+
+  return tables;
+}
+
+function extractRef(dbml: string) {
+  const schemas = JSON.parse(dbml);
+  const refs = [];
+
+  for (let index = 0; index < schemas.length; index++) {
+    const schema = schemas[index];
+    for (let index = 0; index < schema.refs.length; index++) {
+      const ref = schema.refs[index];
+      refs.push(ref);
+    }
+  }
+
+  return refs;
+}
+
+function positionCloneAndConnector(currentNode, clonedNode) {
+  const oneToOneConnector = figma.createConnector();
+  oneToOneConnector.connectorStart = {
+    endpointNodeId: currentNode.id,
+    magnet: "BOTTOM",
+  };
+  oneToOneConnector.connectorEnd = {
+    endpointNodeId: clonedNode.id,
+    magnet: "TOP",
+  };
+
+  clonedNode.x = currentNode.x;
+  clonedNode.y += currentNode.height + 40;
+  figma.currentPage.appendChild(clonedNode);
 }
 
 function Table(props: {
@@ -366,29 +508,6 @@ function Column(props: {
       )}
     </AutoLayout>
   );
-}
-
-function informAllSiblings(widgetId, siblings) {
-  figma.currentPage.findWidgetNodesByWidgetId(widgetId).forEach((n) => {
-    if (Object.keys(siblings).indexOf(n.id) >= 0) {
-      n.setWidgetSyncedState({ siblings: siblings });
-    }
-  });
-}
-
-function extractTables(dbml: string) {
-  const schemas = JSON.parse(dbml);
-  const tables = [];
-
-  for (let index = 0; index < schemas.length; index++) {
-    const schema = schemas[index];
-    for (let index = 0; index < schema.tables.length; index++) {
-      const table = schema.tables[index];
-      tables.push({ ...table, schemaName: schema.name });
-    }
-  }
-
-  return tables;
 }
 
 widget.register(Widget);
