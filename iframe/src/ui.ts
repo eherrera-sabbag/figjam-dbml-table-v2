@@ -12,7 +12,9 @@ import { javascript } from "@codemirror/lang-javascript";
 
 // Replaced by the widget to inject state
 const INITIAL_DOC = ``;
+const INITIAL_REF_DOC = `// Ref author_has_books:public.authors.id < public.books.author_id`;
 const INITIAL_LANGUAGE = "JavaScript";
+const TABLE_LIST = "$$$TABLE_LIST$$$" || [];
 
 // The mapping from languages to CodeMirror packages
 const LANGUAGES = [
@@ -23,20 +25,37 @@ const LANGUAGES = [
 ];
 
 // Initialize the language
-const languageObject = LANGUAGES.filter(
-  (x) => x.name === "$$$INITIAL_LANGUAGE$$$"
-)[0]; // INITIAL_LANGUAGE replaced by the widget to inject state
+const languageObject = LANGUAGES.filter((x) => x.name === INITIAL_LANGUAGE)[0];
 const language = languageObject.package();
 const languageName = languageObject.name;
 
-const DEFAULT_STYLE: Style = {
-  color: "",
-  weight: "",
-};
+// const DEFAULT_STYLE: Style = {
+//   color: "",
+//   weight: "",
+// };
 
-const p = document.createElement("p");
-p.innerHTML = "Press ESC to exist code editor";
-document.body.appendChild(p);
+createInfoText();
+// create div with class name editor container and append it after p
+const editorContainer = document.createElement("div");
+editorContainer.className = "editor-container";
+editorContainer.style.display = "flex";
+editorContainer.style.flexDirection = "row";
+editorContainer.style.width = "100%";
+editorContainer.style.height = "100%";
+// editorcontainer child width equaly divided
+editorContainer.style.flex = "1";
+
+const tableContainer = horizonContainer("table-container", { portion: 3 });
+const existTableContainer = horizonContainer("exist-table-container", {
+  portion: 1,
+  align: "start",
+  other: "height: 525px; border: 1px dashed gray;",
+});
+// const actionContainer = horizonContainer("action-container");
+
+editorContainer.appendChild(tableContainer);
+
+document.body.appendChild(editorContainer);
 
 /**
  * Gets the CodeMirror editor extension configuration for the given languages
@@ -46,34 +65,6 @@ document.body.appendChild(p);
  */
 function getExtensions(language: LanguageSupport, languageName: string) {
   // Cached styles
-  const STYLE_CACHE: { [style: string]: Style } = {};
-
-  /**
-   * Gets the style given a CodeMirror highlight class
-   * @param className The CodeMirror class name
-   * @returns A style object with computed styles based on the iframe DOM
-   */
-  function getStyle(className: string): Style {
-    // Check if the style is cached to avoid unnecessary computation
-    if (STYLE_CACHE[className] != null) {
-      return STYLE_CACHE[className];
-    }
-
-    // Create a temporary element
-    const tmpElem = document.createElement("div");
-    tmpElem.className = className;
-    document.body.appendChild(tmpElem);
-    // Update the cache with the computed style
-    const computed = getComputedStyle(tmpElem);
-    STYLE_CACHE[className] = {
-      color: computed.color,
-      weight: computed.fontWeight,
-    };
-    document.body.removeChild(tmpElem);
-
-    // Return getStyle, which will retrieve from cache now
-    return getStyle(className);
-  }
 
   return [
     // Essential setup
@@ -86,7 +77,7 @@ function getExtensions(language: LanguageSupport, languageName: string) {
         (v.transactions.length > 0 &&
           v.transactions.some((transaction) => transaction.reconfigured))
       ) {
-        // Document changed
+        // on Document changed
         const docContents = v.state.doc.toString();
 
         let dbmlJSON: string | null = null;
@@ -107,6 +98,7 @@ function getExtensions(language: LanguageSupport, languageName: string) {
           dbml: dbmlJSON,
           dbmlError: dbmlError,
           language: languageName,
+          buttonAction: "update",
         };
 
         returnMessage(parent, message);
@@ -117,11 +109,26 @@ function getExtensions(language: LanguageSupport, languageName: string) {
 
         let dbmlJSON: string | null = null;
         let dbmlError: string | null = null;
+        let extraTable: string | null = null;
 
         try {
+          if (TABLE_LIST.length > 0) {
+            extraTable = (TABLE_LIST as SiblingTable[])
+              .map((table: SiblingTable) => {
+                const tName = (table.schemaName || 'public')  + "." + table.name;
+                return `Table ${tName} { \n ${table.fields
+                  .map((f) => f.name + " " + f.type)
+                  .join("\n")} \n }`;
+              })
+              .join("\n");
+          }
+
+          const docWithExtraTable = [docContents,extraTable].join('\n');
+
+          const parseDbml = Parser.parse(docWithExtraTable, "dbml");
+
           dbmlJSON = Helper.convertToJson(parseDbml);
 
-          dbmlJSON = convertToJson(parseDbml);
         } catch (err) {
           dbmlError = err.message;
         }
@@ -132,6 +139,7 @@ function getExtensions(language: LanguageSupport, languageName: string) {
           dbml: dbmlJSON,
           dbmlError: dbmlError,
           language: languageName,
+          buttonAction: "update",
         });
       }
     }),
@@ -165,79 +173,233 @@ const editor = new EditorView({
     doc: "$$$INITIAL_DOC$$$", // INITIAL_DOC replaced by the widget to inject state
     extensions: getExtensions(language, languageName),
   }),
-  parent: document.body,
+  parent: tableContainer,
 });
 editor.focus();
 
-const convertToJson = (dbml): string | null => {
-  // let dbmlResponse = []
-  // loop through schemas and tables and create new json name, notes, columns, and relationships
+// createRefEditor();
+renderExistTableList(existTableContainer);
+editorContainer.appendChild(existTableContainer);
 
-  const dbmlResponse = dbml.schemas.map((schema) => {
-    const { name: schemaName, note: schemaNote } = schema;
-    const newSchema: SchemaResponse = {
-      name: schemaName,
-      note: schemaNote,
+editor.dom.style.width = "100%";
+editor.dom.style.height = "90%";
+editor.dom.style.border = "0.2px solid gray";
 
-      tables: schema.tables.map((table) => {
-        const newTable: TableResponse = {
-          name: table.name,
-          alias: table.alias,
-          note: table.note,
-          fields: table.fields.map((field) => {
-            const newField: FieldResponse = {
-              name: field.name,
-              pk: field.pk,
-              type: field.type.type_name,
-              fieldDefault: field.dbdefault,
-              not_null: field.not_null,
-              unique: field.unique,
-              note: field.note,
-            };
-            return newField;
-          }),
-        };
+// generateAction(actionContainer);
 
-        return newTable;
-      }),
-      enums: schema.enums.map((enumItem) => {
-        const newEnum: EnumResponse = {
-          name: enumItem.name,
-          values: enumItem.values.map((value) => {
-            const newValue: EnumValueResponse = {
-              id: value.id,
-              name: value.name,
-              note: value.note,
-            };
-            return newValue;
-          }),
-        };
-        return newEnum;
-      }),
-      refs: schema.refs.map((ref) => {
-        const newRef: RefResponse = {
-          id: ref.id,
-          name: ref.name,
-          from: {
-            schema: ref.endpoints[0].schemaName,
-            table: ref.endpoints[0].tableName,
-            relationship: ref.endpoints[0].relation,
-            fieldNames: ref.endpoints[0].fieldNames,
-          },
-          to: {
-            schema: ref.endpoints[1].schemaName,
-            table: ref.endpoints[1].tableName,
-            relationship: ref.endpoints[1].relation,
-            fieldNames: ref.endpoints[1].fieldNames,
-          },
-        };
-        return newRef;
-      }),
-    };
-    return newSchema;
-  });
-  return JSON.stringify(dbmlResponse as SchemaResponse);
-};
+// editorContainer.appendChild(actionContainer);
+
+// const convertToJson = (dbml): string | null => {
+//   // let dbmlResponse = []
+//   // loop through schemas and tables and create new json name, notes, columns, and relationships
+
+//   const dbmlResponse = dbml.schemas.map((schema) => {
+//     const { name: schemaName, note: schemaNote } = schema;
+//     const newSchema: SchemaResponse = {
+//       name: schemaName,
+//       note: schemaNote,
+
+//       tables: schema.tables.map((table) => {
+//         const newTable: TableResponse = {
+//           name: table.name,
+//           alias: table.alias,
+//           note: table.note,
+//           fields: table.fields.map((field) => {
+//             const newField: FieldResponse = {
+//               name: field.name,
+//               pk: field.pk,
+//               type: field.type.type_name,
+//               fieldDefault: field.dbdefault,
+//               not_null: field.not_null,
+//               unique: field.unique,
+//               note: field.note,
+//             };
+//             return newField;
+//           }),
+//         };
+
+//         return newTable;
+//       }),
+//       enums: schema.enums.map((enumItem) => {
+//         const newEnum: EnumResponse = {
+//           name: enumItem.name,
+//           values: enumItem.values.map((value) => {
+//             const newValue: EnumValueResponse = {
+//               id: value.id,
+//               name: value.name,
+//               note: value.note,
+//             };
+//             return newValue;
+//           }),
+//         };
+//         return newEnum;
+//       }),
+//       refs: schema.refs.map((ref) => {
+//         const fromEnd = ref.endpoints[0];
+//         const toEnd = ref.endpoints[1];
+//         const fromEndString = [
+//           fromEnd.schemaName,
+//           fromEnd.tableName,
+//           fromEnd.fieldNames,
+//           fromEnd.relation,
+//         ].join('|')
+
+//         const toEndString = [
+//           toEnd.schemaName,
+//           toEnd.tableName,
+//           toEnd.fieldNames,
+//           toEnd.relation,
+//         ].join("|");
+//         const newRef: RefResponse = {
+//           id: ref.id,
+//           name: ref.name,
+//           from: {
+//             schema: fromEnd.schemaName,
+//             table: fromEnd.tableName,
+//             relation: fromEnd.relation,
+//             fieldNames: fromEnd.fieldNames,
+//           },
+//           to: {
+//             schema: toEnd.schemaName,
+//             table: toEnd.tableName,
+//             relation: toEnd.relation,
+//             fieldNames: toEnd.fieldNames,
+//           },
+//           refDef: [fromEndString, toEndString].join("~"),
+//         };
+//         return newRef;
+//       }),
+//     };
+//     return newSchema;
+//   });
+//   return JSON.stringify(dbmlResponse as SchemaResponse);
+// };
+
+function horizonContainer(
+  className: string = "container-name",
+  extra: { portion?: number; align?: "center" | "start"; other?: string } = {
+    portion: 1,
+    align: "center",
+    other: "",
+  }
+) {
+  const { portion, align, other = "" } = extra;
+
+  const container = document.createElement("div");
+  container.classList.add(className);
+  container.style.width = "100%";
+  container.style.height = "100%";
+  container.style.paddingLeft = "5px";
+  container.style.paddingRight = "5px";
+  container.style.display = "flex";
+  container.style.flexDirection = "column";
+  container.style.alignItems = align;
+  container.style.flex = portion.toString();
+  container.style.overflow = "scroll";
+  container.style.cssText = container.style.cssText + other;
+  return container;
+}
+
+function generateButton(text: string = "Batch Table") {
+  const button = document.createElement("div");
+  button.style.width = "fit-content";
+  button.style.height = "50px";
+  button.style.backgroundColor = "coral";
+  button.style.color = "white";
+  button.style.display = "flex";
+  button.style.justifyContent = "center";
+  button.style.alignItems = "center";
+  button.style.cursor = "pointer";
+  button.style.borderRadius = "5px";
+  button.style.paddingLeft = "5px";
+  button.style.paddingRight = "5px";
+  button.style.margin = "5px";
+
+  button.innerHTML = text;
+  return button;
+}
+
+function createInfoText() {
+  const infoText = document.createElement("p");
+  infoText.innerHTML = "Press ESC to exit code editor";
+  document.body.appendChild(infoText);
+}
+
+function renderExistTableList(existTableContainer) {
+  const availableTable = document.createElement("ul");
+  const fontSize =18;
+  availableTable.style.paddingLeft = '20px';
+  if (TABLE_LIST.length > 0) {
+    (TABLE_LIST as SiblingTable[]).forEach((table: SiblingTable) => {
+      const li = document.createElement("li");
+
+      const span = document.createElement("span")
+      span.innerHTML = table.schemaName + "." + table.name;
+      li.innerHTML =  span.outerHTML;
+
+      const fieldUl = document.createElement("ul");
+      fieldUl.style.paddingLeft = '10px';
+
+      const tableField = table.fields || [];
+      tableField.forEach((field) => {
+        const fieldLi = document.createElement("li");
+        fieldLi.innerHTML =  field.name;
+
+        fieldUl.appendChild(fieldLi);
+      });
+
+      li.appendChild(fieldUl);
+      availableTable.appendChild(li);
+    });
+  }
+  existTableContainer.appendChild(availableTable);
+}
+
+// function createRefEditor() {
+//   const refEditor = new EditorView({
+//     state: EditorState.create({
+//       doc: "$$$INITIAL_REF_DOC$$$", // INITIAL_DOC replaced by the widget to inject state
+//       extensions: getExtensions(language, languageName),
+//     }),
+//     // parent: refContainer,
+//   });
+//   refEditor.dom.style.width = "100%";
+//   refEditor.dom.style.height = "100%";
+//   refEditor.dom.style.border = "0.2px solid gray";
+// }
+
+// function generateAction(actionContainer) {
+//   const batchCreateButton = generateButton("Generate All Table");
+//   batchCreateButton.addEventListener("click", () => {
+//     const docContents = editor.state.doc.toString();
+
+//     let dbmlJSON: string | null = null;
+//     let dbmlError: string | null = null;
+
+//     try {
+//       const parseDbml = Parser.parse(docContents, "dbml");
+
+//       // dbmlJSON = convertToJson(parseDbml);
+//     } catch (err) {
+//       dbmlError = err.message;
+//     }
+
+//     const message: Message = {
+//       type: "text",
+//       text: docContents,
+//       dbml: dbmlJSON,
+//       dbmlError: dbmlError,
+//       language: languageName,
+//       buttonAction: "batch_create",
+//     };
+
+//     returnMessage(parent, message);
+//   });
+//   const connectRefButton = generateButton("Connect Ref");
+
+//   actionContainer.appendChild(batchCreateButton);
+//   actionContainer.appendChild(connectRefButton);
+// }
 
 // Listen to dropdown change events and update the editor with a new extension
 // configuration based on the selected language
