@@ -1,8 +1,18 @@
+type SiblingTable = {
+  schemaName: string;
+  name: string;
+  fields: {
+    id: string;
+    name: string;
+    type: string;
+  }[];
+};
+
 interface RefEndpoint {
   schema: string;
   table: string;
   fieldNames: string[];
-  relationship: string;
+  relation: string;
 }
 
 type EnumValueResponse = {
@@ -21,6 +31,7 @@ type RefResponse = {
   name: string;
   from: RefEndpoint;
   to: RefEndpoint;
+  refDef: string;
 };
 
 type FieldResponse = {
@@ -76,7 +87,9 @@ interface Message {
   height?: number;
   text: string;
   dbml: string | null;
+  parsedDbml?: any;
   dbmlError: string | null;
   tokens?: Token[];
   language: string;
+  buttonAction?: "update" | "batch_create" | "ref-create";
 }
