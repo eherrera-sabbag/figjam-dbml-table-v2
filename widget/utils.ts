@@ -59,13 +59,13 @@ const convertToJson = (dbml) => {
           id: ref.id,
           name: ref.name,
           from: {
-            schema: fromEnd.schemaName,
+            schema: fromEnd.schemaName || 'public',
             table: fromEnd.tableName,
             relation: fromEnd.relation,
             fieldNames: fromEnd.fieldNames,
           },
           to: {
-            schema: toEnd.schemaName,
+            schema: toEnd.schemaName || 'public',
             table: toEnd.tableName,
             relation: toEnd.relation,
             fieldNames: toEnd.fieldNames,
