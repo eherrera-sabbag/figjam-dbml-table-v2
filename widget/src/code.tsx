@@ -36,6 +36,7 @@ const SAMPLE_TABLE = {
     },
   ],
 };
+const SAMPLE_DBML = `[{"name":"public","note":"Default Public Schema","tables":[{"name":"table_name","alias":null,"fields":[{"name":"id","pk":true,"type":"int"},{"name":"created_at","type":"timestamp"},{"name":"updated_at","type":"timestamp"}]}],"enums":[],"refs":[]}]`;
 const PLACEHOLDER_TEXT = `Table table_name{
   id int [pk]
   created_at timestamp
@@ -92,7 +93,7 @@ function Widget() {
 
   const [showNote, setShowNote] = useSyncedState("showNote", true);
   const [tableDef, setTableDef] = useSyncedState("tableDef", PLACEHOLDER_TEXT); // use for store string display on edit
-  const [dbml, setDbml] = useSyncedState("dbml", "");
+  const [dbml, setDbml] = useSyncedState("dbml", SAMPLE_DBML);
   const [table, setTable] = useSyncedState("table", SAMPLE_TABLE); // use to hold table object
   const [FONT_SIZE, setFontSize] = useSyncedState("fontSize", 24);
   // const [colorMode, setColorMode] = useSyncedState("colorMode", "light");
@@ -194,7 +195,6 @@ function Widget() {
           const dbmlJson = JSON.parse(currentNode.widgetSyncedState.dbml)
           dbmlJson[0].tables.push(tableObj)
           dbmlJson[0].refs.map(ref => {
-
             ref.refDef = ref.refDef.replace(`|${oldTableName}|`, `|${tableObj.name}|`);
 
             if(ref.from.table === oldTableName) ref.from.table = tableObj.name
