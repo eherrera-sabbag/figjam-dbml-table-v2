@@ -38,6 +38,7 @@ type FieldResponse = {
   name: string;
   type: string;
   pk?: boolean;
+  fk?: boolean;
   note?: string;
   not_null?: boolean;
   unique?: string;

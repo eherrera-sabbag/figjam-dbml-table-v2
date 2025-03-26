@@ -27,6 +27,11 @@ const SAMPLE_TABLE = {
       pk: true,
     },
     {
+      name: "active",
+      type: "bool",
+      fieldDefault: "1"
+    },
+    {
       name: "created_at",
       type: "timestamp",
     },
@@ -36,9 +41,10 @@ const SAMPLE_TABLE = {
     },
   ],
 };
-const SAMPLE_DBML = `[{"name":"public","note":"Default Public Schema","tables":[{"name":"table_name","alias":null,"fields":[{"name":"id","pk":true,"type":"int"},{"name":"created_at","type":"timestamp"},{"name":"updated_at","type":"timestamp"}]}],"enums":[],"refs":[]}]`;
+const SAMPLE_DBML = `[{"name":"public","note":"Default Public Schema","tables":[{"name":"table_name","alias":null,"fields":[{"name":"id","pk":true,"type":"int"},{"name":"active","fieldDefault":"1","type":"bool"},{"name":"created_at","type":"timestamp"},{"name":"updated_at","type":"timestamp"}]}],"enums":[],"refs":[]}]`;
 const PLACEHOLDER_TEXT = `Table table_name{
   id int [pk]
+  active bool [not null, default: "1"]
   created_at timestamp
   updated_at timestamp
 }
@@ -56,6 +62,7 @@ const DEFAULT_HEADER_COLOR = [
   { option: "#BDE3FF", tooltip: "Light blue" },
   { option: "#E4CCFF", tooltip: "Light violet" },
   { option: "#FFF8E7", tooltip: "Cosmic Latte" },
+  { option: "#1F41AC", tooltip: "Cobalt Blue" },
   { option: "#78e08f", tooltip: "Aurora" },
   { option: "#b8e994", tooltip: "Paradise" },
 ];
@@ -504,7 +511,7 @@ function Column(props: {
   showNote: boolean;
 }) {
   const {
-    column: { name, type, pk, note, not_null, unique, fieldDefault },
+    column: { name, type, pk, fk, note, not_null, unique, fieldDefault },
     fontSize,
     showNote,
   } = props;
@@ -516,9 +523,9 @@ function Column(props: {
     .filter(Boolean)
     .join("\n");
 
-  const leftIcon = pk ? "key" : unique ? "asterisk" : "";
-  const leftIconColor = pk ? "#FFE800" : unique ? "#3498db" : "";
-  const leftIconToolTip = pk ? "Primary Key" : unique ? "Unique" : "";
+  const leftIcon = pk ? "key" : fk ? "key" : unique ? "asterisk" : "";
+  const leftIconColor = pk ? "#FFE800" : fk ? "#dcdcdc" : unique ? "#3498db" : "";
+  const leftIconToolTip = pk ? "Primary Key" : fk ? "Foreign Key" : unique ? "Unique" : "";
 
   const DEFAULT_COL_HEIGHT = 48;
   const hasNote = note || fieldDefault;

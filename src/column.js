@@ -1,14 +1,14 @@
 const { widget: { Text, AutoLayout }, } = figma;
 export default function Column(props) {
-    const { column: { name, type, pk, note, not_null, unique, fieldDefault }, fontSize, showNote, } = props;
+    const { column: { name, type, pk, fk, note, not_null, unique, fieldDefault }, fontSize, showNote, } = props;
     const displayNote = note ? note : "";
     const displayDefaultValue = fieldDefault && fieldDefault.value ? "Default: " + fieldDefault.value : "";
     const colTooltip = [displayNote, displayDefaultValue]
         .filter(Boolean)
         .join("\n");
-    const leftIcon = pk ? "key" : unique ? "asterisk" : "";
-    const leftIconColor = pk ? "#FFE800" : unique ? "#3498db" : "";
-    const leftIconToolTip = pk ? "Primary Key" : unique ? "Unique" : "";
+    const leftIcon = pk ? "key" : fk ? "key" : unique ? "asterisk" : "";
+    const leftIconColor = pk ? "#FFE800" : fk ? "#dcdcdc" : unique ? "#3498db" : "";
+    const leftIconToolTip = pk ? "Primary Key" : fk ? "Foreign Key" : unique ? "Unique" : "";
     const DEFAULT_COL_HEIGHT = 48;
     const hasNote = note || fieldDefault;
     // const colHeight =

@@ -8,7 +8,7 @@ export default function Column(props: {
   showNote: boolean;
 }) {
   const {
-    column: { name, type, pk, note, not_null, unique, fieldDefault },
+    column: { name, type, pk, fk, note, not_null, unique, fieldDefault },
     fontSize,
     showNote,
   } = props;
@@ -20,9 +20,9 @@ export default function Column(props: {
     .filter(Boolean)
     .join("\n");
 
-  const leftIcon = pk ? "key" : unique ? "asterisk" : "";
-  const leftIconColor = pk ? "#FFE800" : unique ? "#3498db" : "";
-  const leftIconToolTip = pk ? "Primary Key" : unique ? "Unique" : "";
+  const leftIcon = pk ? "key" : fk ? "key" : unique ? "asterisk" : "";
+  const leftIconColor = pk ? "#FFE800" : fk ? "#dcdcdc" : unique ? "#3498db" : "";
+  const leftIconToolTip = pk ? "Primary Key" : fk ? "Foreign Key" : unique ? "Unique" : "";
 
   const DEFAULT_COL_HEIGHT = 48;
   const hasNote = note || fieldDefault;

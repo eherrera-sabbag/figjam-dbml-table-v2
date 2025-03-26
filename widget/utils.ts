@@ -15,6 +15,7 @@ const convertToJson = (dbml) => {
             const newField = {
               name: field.name,
               pk: field.pk,
+              fk: field.fk,
               type: field.type.type_name,
               fieldDefault: field.dbdefault,
               not_null: field.not_null,

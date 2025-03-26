@@ -10,6 +10,11 @@ export const SAMPLE_TABLE = {
       pk: true,
     },
     {
+      name: "active",
+      type: "bool",
+      fieldDefault: "1"
+    },
+    {
       name: "created_at",
       type: "timestamp",
     },
@@ -22,6 +27,7 @@ export const SAMPLE_TABLE = {
 
 export const PLACEHOLDER_TEXT = `Table table_name{
   id int [pk]
+  active bool [not null, default: "1"]
   created_at timestamp
   updated_at timestamp
 }
@@ -43,4 +49,5 @@ export const DEFAULT_HEADER_COLOR = [
   { option: "#BDE3FF", tooltip: "Light blue" },
   { option: "#E4CCFF", tooltip: "Light violet" },
   { option: "#FFF8E7", tooltip: "Cosmic Latte" },
+  { option: "#1F41AC", tooltip: "Cobalt Blue" },
 ];

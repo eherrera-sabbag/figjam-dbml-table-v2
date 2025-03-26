@@ -35,5 +35,6 @@ export const defaultHeaderColors = [
     { option: "#BDE3FF", tooltip: "Light blue" },
     { option: "#E4CCFF", tooltip: "Light violet" },
     { option: "#FFF8E7", tooltip: "Cosmic Latte" },
+    { option: "#1F41AC", tooltip: "Cobalt Blue" },
 ];
 export default defaultHeaderColors;
